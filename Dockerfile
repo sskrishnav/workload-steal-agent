@@ -25,4 +25,4 @@ COPY --from=builder ${APPPATH}/workloadstealagent ${APPPATH}/workloadstealagent
 
 EXPOSE 8443
 
-CMD [ "/app/admissioncontroller" ]
+CMD [ "/app/workloadstealagent" ]

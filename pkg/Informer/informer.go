@@ -66,7 +66,6 @@ func (n *notify) Start(stopChan chan<- bool) error {
 
 	fmt.Println("Watching for Pod events")
 	watch, err := n.cli.CoreV1().Pods("").Watch(context.Background(), metav1.ListOptions{})
-	//watch, err := m.cli.AppsV1().Deployments("").Watch(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		slog.Error("Failed to watch pods: ", "error", err)
 		return err

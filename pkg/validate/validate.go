@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	admission "k8s.io/api/admission/v1"
-	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -59,27 +59,27 @@ func New(config Config) (Validator, error) {
 }
 
 func (v *validator) Validate(ar admission.AdmissionReview) *admission.AdmissionResponse {
-	slog.Info("Make deplopoyment Invalid")
-	deploymentResource := metav1.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deplopoyments"}
-	if ar.Request.Resource != deploymentResource {
-		slog.Error(fmt.Sprintf("expect resource to be %s", deploymentResource))
+	slog.Info("Make pod Invalid")
+	podResource := metav1.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}
+	if ar.Request.Resource != podResource {
+		slog.Error(fmt.Sprintf("expect resource to be %s", &podResource))
 		return nil
 	}
 	raw := ar.Request.Object.Raw
-	deployment := appsv1.Deployment{}
-	if _, _, err := deserializer.Decode(raw, nil, &deployment); err != nil {
-		slog.Error("failed to decode deployment", "error", err)
+	pod := corev1.Pod{}
+	if _, _, err := deserializer.Decode(raw, nil, &pod); err != nil {
+		slog.Error("failed to decode pod", "error", err)
 		return &admission.AdmissionResponse{
 			Result: &metav1.Status{
 				Message: err.Error(),
 			},
 		}
 	}
-	isEligibleToSteal := isLableExists(&deployment, v.vconfig.LableToFilter)
+	isEligibleToSteal := isLableExists(&pod, v.vconfig.LableToFilter)
 	if !isEligibleToSteal {
 		return &admission.AdmissionResponse{Allowed: true}
 	}
-	message := fmt.Sprintf("deployment %s was stolen", &deployment)
+	message := fmt.Sprintf("pod %s was stolen", &pod)
 	return &admission.AdmissionResponse{
 		Allowed: false,
 		Result: &metav1.Status{
@@ -89,7 +89,7 @@ func (v *validator) Validate(ar admission.AdmissionReview) *admission.AdmissionR
 	}
 }
 
-func isLableExists(deployment *appsv1.Deployment, lable string) bool {
+func isLableExists(deployment *corev1.Pod, lable string) bool {
 	value, ok := deployment.Labels[lable]
 	if !ok || strings.ToLower(value) == "false" {
 		return false

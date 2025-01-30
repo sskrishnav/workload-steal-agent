@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	informer "workloadstealagent/pkg/Informer"
 	"workloadstealagent/pkg/controller"
+	informer "workloadstealagent/pkg/informer"
 	"workloadstealagent/pkg/validate"
 
 	"github.com/spf13/viper"

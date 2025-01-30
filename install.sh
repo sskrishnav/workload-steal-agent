@@ -3,7 +3,7 @@
 echo "Creating certificates"
 mkdir certs
 openssl genrsa -out certs/tls.key 2048
-openssl req -new -key certs/tls.key -out certs/tls.csr -subj "/CN=webhook-server.myorgops.svc"
+openssl req -new -key certs/tls.key -out certs/tls.csr -subj "/CN=webhook-server.hiro.svc"
 echo "subjectAltName=DNS:webhook-server.hiro.svc" > ./subj.txt
 
 openssl x509 -req -extfile subj.txt -in certs/tls.csr -signkey certs/tls.key -out certs/tls.crt

@@ -3,7 +3,7 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: webhook-server
 webhooks:
-  - name: "webhook-server.myorgops.svc"
+  - name: "webhook-server.hiro.svc"
     namespaceSelector:
       matchExpressions:
         - key: kubernetes.io/metadata.name
@@ -13,11 +13,11 @@ webhooks:
       - operations: [ "CREATE"]
         apiGroups: [ "apps" ]
         apiVersions: [ "v1" ]
-        resources: [ "deployments" ]
+        resources: [ "pods" ]
         scope: "Namespaced"
     clientConfig:
       service:
-        namespace: myorgops
+        namespace: hiro
         name: webhook-server
         path: "/validate"
       caBundle: <ENCODED_CA>
