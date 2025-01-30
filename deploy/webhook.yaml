@@ -11,7 +11,7 @@ webhooks:
           values: [ "hiro" ]
     rules:
       - operations: [ "CREATE"]
-        apiGroups: [ "apps" ]
+        apiGroups: [ "" ]
         apiVersions: [ "v1" ]
         resources: [ "pods" ]
         scope: "Namespaced"
