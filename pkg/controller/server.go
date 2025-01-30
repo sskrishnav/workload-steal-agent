@@ -49,7 +49,7 @@ func (s *server) Start(stopChan chan<- bool) error {
 	defer func() { stopChan <- true }()
 
 	http.HandleFunc("/validate", s.validateHandler)
-	slog.Info("Server started ...")
+	slog.Info("Admission Webhook Server started ...")
 
 	return http.ListenAndServeTLS(s.address, s.config.TLSCertPath, s.config.TLSKeyPath, nil)
 }

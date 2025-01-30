@@ -3,9 +3,7 @@ package informer
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log/slog"
-	"os"
 
 	nats "github.com/nats-io/nats.go"
 	corev1 "k8s.io/api/core/v1"
@@ -51,9 +49,9 @@ func New(config Config) (*notify, error) {
 func (n *notify) Start(stopChan chan<- bool) error {
 	defer func() { stopChan <- true }()
 
-	// Configure structured logging with slog
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	slog.SetDefault(logger)
+	// // Configure structured logging with slog
+	// logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	// slog.SetDefault(logger)
 
 	// Connect to NATS server
 	natsConnect, err := nats.Connect(n.nconfig.NATSURL)
@@ -64,7 +62,7 @@ func (n *notify) Start(stopChan chan<- bool) error {
 	defer natsConnect.Close()
 	slog.Info("Connected to NATS server")
 
-	fmt.Println("Watching for Pod events")
+	slog.Info("Watching for Pod events")
 	watch, err := n.cli.CoreV1().Pods("").Watch(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		slog.Error("Failed to watch pods: ", "error", err)

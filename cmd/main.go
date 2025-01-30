@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"log/slog"
 
 	"workloadstealagent/pkg/controller"
 	informer "workloadstealagent/pkg/informer"
@@ -20,6 +21,7 @@ var (
 func main() {
 	stopChan := make(chan bool)
 
+	slog.Info("Configuring Validator")
 	validatorConfig := validate.Config{
 		LableToFilter: getENVValue("WORK_LOAD_STEAL_LABLE"),
 	}
@@ -28,6 +30,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	slog.Info("Configuring Controller(Admission WebHook)")
 	controllerConfig := controller.Config{
 		Port:        8443,
 		TLSKeyPath:  tlsKeyPath,
@@ -37,6 +40,7 @@ func main() {
 
 	go log.Fatal(server.Start(stopChan))
 
+	slog.Info("Configuring Informer")
 	informerConfig := informer.Config{
 		NATSURL:     getENVValue("NATS_URL"),
 		NATSSubject: getENVValue("NATS_SUBJECT"),
@@ -47,6 +51,7 @@ func main() {
 	}
 
 	go log.Fatal(informer.Start(stopChan))
+	<-stopChan
 }
 
 func init() {
