@@ -4,23 +4,22 @@ metadata:
   name: webhook-server
 webhooks:
   - name: "webhook-server.hiro.svc"
+    admissionReviewVersions: ["v1"]
     namespaceSelector:
       matchExpressions:
         - key: kubernetes.io/metadata.name
-          operator: In
-          values: [ "hiro" ]
+          operator: NotIn
+          values: [ "default", "kube-system", "hiro" ]
     rules:
       - operations: [ "CREATE"]
         apiGroups: [ "" ]
         apiVersions: [ "v1" ]
         resources: [ "pods" ]
-        scope: "Namespaced"
     clientConfig:
       service:
         namespace: hiro
         name: webhook-server
         path: "/validate"
       caBundle: <ENCODED_CA>
-    admissionReviewVersions: ["v1"]
     sideEffects: None
     timeoutSeconds: 5
