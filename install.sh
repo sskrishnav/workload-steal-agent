@@ -13,6 +13,12 @@ kubectl create secret tls webhook-server-tls \
     --cert "certs/tls.crt" \
     --key "certs/tls.key" -n hiro
 
+echo "Build Docker image"
+docker build -t workloadstealworker:alpha1 .
+
+echo "Load Image to Kind cluster"
+kind load docker-image workloadstealworker:alpha1
+
 echo "Deploying Webhook Server"
 kubectl apply -f deployment.yaml
 kubectl apply -f service.yaml
