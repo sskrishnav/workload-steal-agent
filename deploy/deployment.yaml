@@ -1,3 +1,32 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pod-watcher-sa
+  namespace: hiro
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pod-watcher-clusterrole
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pod-watcher-clusterrolebinding
+subjects:
+- kind: ServiceAccount
+  name: pod-watcher-sa
+  namespace: hiro
+roleRef:
+  kind: ClusterRole
+  name: pod-watcher-clusterrole
+  apiGroup: rbac.authorization.k8s.io
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,6 +44,7 @@ spec:
       labels:
         app: webhook-server
     spec:
+      serviceAccountName: pod-watcher-sa
       containers:
         - name: webhook-server
           image: workloadstealagent:alpha1
@@ -26,6 +56,8 @@ spec:
             value: "WorkStealingPod"
           - name: WORK_LOAD_STEAL_LABLE
             value: "WorkLoadSteal"
+          - name: IGNORE_NAMESPACES
+            value: "default,kube-system,hiro"
           resources:
             requests:
               memory: "64Mi"

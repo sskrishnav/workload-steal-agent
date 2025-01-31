@@ -12,14 +12,21 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-type Config struct {
+var K8SNamespaces = []string{"default", "kube-system"}
+
+type NATSConfig struct {
 	NATSURL     string
 	NATSSubject string
 }
 
+type Config struct {
+	Nconfig          NATSConfig
+	IgnoreNamespaces []string
+}
+
 type notify struct {
-	nconfig Config
-	cli     *kubernetes.Clientset
+	config Config
+	cli    *kubernetes.Clientset
 }
 
 func getClientSet() (*kubernetes.Clientset, error) {
@@ -41,20 +48,19 @@ func New(config Config) (*notify, error) {
 		return nil, err
 	}
 	return &notify{
-		cli:     clientset,
-		nconfig: config,
+		cli:    clientset,
+		config: config,
 	}, nil
 }
 
 func (n *notify) Start(stopChan chan<- bool) error {
 	defer func() { stopChan <- true }()
 
-	// // Configure structured logging with slog
-	// logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	// slog.SetDefault(logger)
-
+	nsubject := n.config.Nconfig.NATSSubject
+	nurl := n.config.Nconfig.NATSURL
+	inamespace := n.config.IgnoreNamespaces
 	// Connect to NATS server
-	natsConnect, err := nats.Connect(n.nconfig.NATSURL)
+	natsConnect, err := nats.Connect(nurl)
 	if err != nil {
 		slog.Error("Failed to connect to NATS server: ", "error", err)
 		return err
@@ -80,6 +86,10 @@ func (n *notify) Start(stopChan chan<- bool) error {
 
 		if event.Type == "ADDED" {
 			slog.Info("Pod create event: %s/%s\n", pod.ObjectMeta.Namespace, pod.ObjectMeta.Name)
+			if contains(inamespace, pod.ObjectMeta.Namespace) {
+				slog.Info("Ignoring as Pod belongs to Ignored Namespaces")
+				continue
+			}
 
 			// Serialize the entire Pod metadata to JSON
 			metadataJSON, err := json.Marshal(pod.ObjectMeta)
@@ -89,13 +99,40 @@ func (n *notify) Start(stopChan chan<- bool) error {
 			}
 
 			// Publish notification to NATS
-			err = natsConnect.Publish(n.nconfig.NATSSubject, metadataJSON)
+			err = natsConnect.Publish(nsubject, metadataJSON)
 			if err != nil {
-				slog.Error("Failed to publish message to NATS", "error", err, "subject", n.nconfig.NATSSubject)
+				slog.Error("Failed to publish message to NATS", "error", err, "subject", nsubject)
 				continue
 			}
-			slog.Info("Published Pod metadata to NATS", "subject", n.nconfig.NATSSubject, "metadata", string(metadataJSON))
+			slog.Info("Published Pod metadata to NATS", "subject", nsubject, "metadata", string(metadataJSON))
 		}
 	}
 	return nil
+}
+
+func contains(list []string, item string) bool {
+	for _, str := range mergeUnique(list, K8SNamespaces) {
+		if str == item {
+			return true
+		}
+	}
+	return false
+}
+
+func mergeUnique(slice1, slice2 []string) []string {
+	uniqueMap := make(map[string]bool)
+	result := []string{}
+
+	for _, item := range slice1 {
+		uniqueMap[item] = true
+	}
+	for _, item := range slice2 {
+		uniqueMap[item] = true
+	}
+
+	for key := range uniqueMap {
+		result = append(result, key)
+	}
+
+	return result
 }

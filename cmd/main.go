@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"strings"
 
 	"workloadstealagent/pkg/controller"
 	informer "workloadstealagent/pkg/informer"
@@ -20,6 +21,22 @@ var (
 
 func main() {
 	stopChan := make(chan bool)
+
+	slog.Info("Configuring Informer")
+	natsConfig := informer.NATSConfig{
+		NATSURL:     getENVValue("NATS_URL"),
+		NATSSubject: getENVValue("NATS_SUBJECT"),
+	}
+	informerConfig := informer.Config{
+		Nconfig:          natsConfig,
+		IgnoreNamespaces: strings.Split(getENVValue("IGNORE_NAMESPACES"), ","),
+	}
+	informer, err := informer.New(informerConfig)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	go log.Fatal(informer.Start(stopChan))
 
 	slog.Info("Configuring Validator")
 	validatorConfig := validate.Config{
@@ -40,17 +57,6 @@ func main() {
 
 	go log.Fatal(server.Start(stopChan))
 
-	slog.Info("Configuring Informer")
-	informerConfig := informer.Config{
-		NATSURL:     getENVValue("NATS_URL"),
-		NATSSubject: getENVValue("NATS_SUBJECT"),
-	}
-	informer, err := informer.New(informerConfig)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	go log.Fatal(informer.Start(stopChan))
 	<-stopChan
 }
 
@@ -66,7 +72,7 @@ func init() {
 
 func getENVValue(envKey string) string {
 	// Read environment variables
-	value := viper.GetString("NATS_URL")
+	value := viper.GetString(envKey)
 	if value == "" {
 		message := fmt.Sprintf("%s environment variable is not set", envKey)
 		log.Fatal(message)

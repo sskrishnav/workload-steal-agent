@@ -52,6 +52,15 @@ func (s *server) Start(stopChan chan<- bool) error {
 	slog.Info("Admission Webhook Server started ...")
 
 	return http.ListenAndServeTLS(s.address, s.config.TLSCertPath, s.config.TLSKeyPath, nil)
+	// Start the server in a goroutine
+	// go func() {
+	// 	err := http.ListenAndServeTLS(s.address, s.config.TLSCertPath, s.config.TLSKeyPath, nil)
+	// 	if err != nil {
+	// 		slog.Error("Failed to start admission webhook server", "error", err)
+	// 		//stopChan <- true // Signal that the server has stopped
+	// 	}
+	// }()
+	// return fmt.Errorf("exiting Admission Webhook Server")
 }
 
 func (s *server) validateHandler(w http.ResponseWriter, r *http.Request) {
