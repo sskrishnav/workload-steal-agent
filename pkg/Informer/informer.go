@@ -77,22 +77,22 @@ func (n *notify) Start(stopChan chan<- bool) error {
 	defer watch.Stop()
 
 	slog.Info("Listening for Pod creation events...")
-
 	for event := range watch.ResultChan() {
+		slog.Info("Received", "event", event)
 		pod, ok := event.Object.(*corev1.Pod)
 		if !ok {
 			continue
 		}
 
 		if event.Type == "ADDED" {
-			slog.Info("Pod create event: %s/%s\n", pod.ObjectMeta.Namespace, pod.ObjectMeta.Name)
-			if contains(inamespace, pod.ObjectMeta.Namespace) {
-				slog.Info("Ignoring as Pod belongs to Ignored Namespaces")
+			slog.Info("Pod create event", "namespace", pod.Namespace, "name", pod.Name)
+			if contains(inamespace, pod.Namespace) {
+				slog.Info("Ignoring as Pod belongs to Ignored Namespaces", "namespaces", inamespace)
 				continue
 			}
 
 			// Serialize the entire Pod metadata to JSON
-			metadataJSON, err := json.Marshal(pod.ObjectMeta)
+			metadataJSON, err := json.Marshal(pod)
 			if err != nil {
 				slog.Error("Failed to serialize Pod metadata", "error", err)
 				continue

@@ -1,25 +1,55 @@
+# ---
+# apiVersion: admissionregistration.k8s.io/v1
+# kind: ValidatingWebhookConfiguration
+# metadata:
+#   name: validation-webhook-server
+# webhooks:
+#   - name: "validation-webhook-server.hiro.svc"
+#     admissionReviewVersions: ["v1"]
+#     namespaceSelector:
+#       matchExpressions:
+#         - key: kubernetes.io/metadata.name
+#           operator: NotIn
+#           values: [ "default", "kube-system", "local-path-storage", "hiro", ]
+#     rules:
+#       - operations: [ "CREATE"]
+#         apiGroups: [ "" ]
+#         apiVersions: [ "v1" ]
+#         resources: [ "pods" ]
+#         scope:       "*"
+#     clientConfig:
+#       service:
+#         namespace: hiro
+#         name: validation-webhook-server
+#         path: "/validate"
+#       caBundle: <ENCODED_CA>
+#     sideEffects: None
+#     timeoutSeconds: 5
+---
 apiVersion: admissionregistration.k8s.io/v1
-kind: ValidatingWebhookConfiguration
+kind: MutatingWebhookConfiguration
 metadata:
-  name: webhook-server
+  name: mutation-webhook-server
 webhooks:
-  - name: "webhook-server.hiro.svc"
+  - name: "mutation-webhook-server.hiro.svc"
     admissionReviewVersions: ["v1"]
     namespaceSelector:
       matchExpressions:
         - key: kubernetes.io/metadata.name
           operator: NotIn
-          values: [ "default", "kube-system", "hiro" ]
+          values: [ "default", "kube-system", "local-path-storage", "hiro", ]
     rules:
       - operations: [ "CREATE"]
         apiGroups: [ "" ]
         apiVersions: [ "v1" ]
         resources: [ "pods" ]
+        scope:       "*"
     clientConfig:
       service:
         namespace: hiro
-        name: webhook-server
-        path: "/validate"
+        name: mutation-webhook-server
+        path: "/mutate"
       caBundle: <ENCODED_CA>
     sideEffects: None
     timeoutSeconds: 5
+

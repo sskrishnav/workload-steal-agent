@@ -23,6 +23,6 @@ WORKDIR ${APPPATH}
 
 COPY --from=builder ${APPPATH}/workloadstealagent ${APPPATH}/workloadstealagent
 
-EXPOSE 8443
+EXPOSE 8443 8444
 
 CMD [ "/app/workloadstealagent" ]

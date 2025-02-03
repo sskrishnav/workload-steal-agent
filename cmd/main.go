@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"workloadstealagent/pkg/controller"
-	informer "workloadstealagent/pkg/informer"
 	"workloadstealagent/pkg/validate"
 
 	"github.com/spf13/viper"
@@ -22,25 +21,34 @@ var (
 func main() {
 	stopChan := make(chan bool)
 
-	slog.Info("Configuring Informer")
-	natsConfig := informer.NATSConfig{
+	// slog.Info("Configuring Informer")
+	// natsConfig := informer.NATSConfig{
+	// 	NATSURL:     getENVValue("NATS_URL"),
+	// 	NATSSubject: getENVValue("NATS_SUBJECT"),
+	// }
+	// informerConfig := informer.Config{
+	// 	Nconfig:          natsConfig,
+	// 	IgnoreNamespaces: strings.Split(getENVValue("IGNORE_NAMESPACES"), ","),
+	// }
+	// informer, err := informer.New(informerConfig)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// //go log.Fatal(informer.Start(stopChan))
+	// go func() {
+	// 	informer.Start(stopChan)
+	// }()
+
+	slog.Info("Configuring Validator")
+	natsConfig := validate.NATSConfig{
 		NATSURL:     getENVValue("NATS_URL"),
 		NATSSubject: getENVValue("NATS_SUBJECT"),
 	}
-	informerConfig := informer.Config{
+	validatorConfig := validate.Config{
 		Nconfig:          natsConfig,
 		IgnoreNamespaces: strings.Split(getENVValue("IGNORE_NAMESPACES"), ","),
-	}
-	informer, err := informer.New(informerConfig)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	go log.Fatal(informer.Start(stopChan))
-
-	slog.Info("Configuring Validator")
-	validatorConfig := validate.Config{
-		LableToFilter: getENVValue("WORK_LOAD_STEAL_LABLE"),
+		LableToFilter:    getENVValue("NO_WORK_LOAD_STEAL_LABLE"),
 	}
 	validator, err := validate.New(validatorConfig)
 	if err != nil {
@@ -49,13 +57,21 @@ func main() {
 
 	slog.Info("Configuring Controller(Admission WebHook)")
 	controllerConfig := controller.Config{
-		Port:        8443,
+		MPort:       8443,
+		VPort:       8444,
 		TLSKeyPath:  tlsKeyPath,
 		TLSCertPath: tlsCertPath,
 	}
 	server := controller.New(controllerConfig, validator)
 
-	go log.Fatal(server.Start(stopChan))
+	//go log.Fatal(server.Start(stopChan))
+	go func() {
+		server.StartMutate(stopChan)
+	}()
+
+	go func() {
+		server.StartValidate(stopChan)
+	}()
 
 	<-stopChan
 }

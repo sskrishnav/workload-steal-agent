@@ -12,7 +12,7 @@ metadata:
 rules:
 - apiGroups: [""]
   resources: ["pods"]
-  verbs: ["get", "list", "watch"]
+  verbs: ["get", "list", "watch", "update"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -27,26 +27,75 @@ roleRef:
   name: pod-watcher-clusterrole
   apiGroup: rbac.authorization.k8s.io
 ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: validation-webhook-server
+#   namespace: hiro
+#   labels:
+#     app: validation-webhook-server
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: validation-webhook-server
+#   template:
+#     metadata:
+#       labels:
+#         app: validation-webhook-server
+#     spec:
+#       serviceAccountName: pod-watcher-sa
+#       containers:
+#         - name: validation-webhook-server
+#           image: workloadstealagent:alpha1
+#           imagePullPolicy: IfNotPresent
+#           env:
+#           - name: NATS_URL
+#             value: "demo.nats.io:4222"  
+#           - name: NATS_SUBJECT
+#             value: "WorkStealingPod"
+#           - name: WORK_LOAD_STEAL_LABLE
+#             value: "WorkLoadSteal"
+#           - name: IGNORE_NAMESPACES
+#             value: "default,kube-system,local-path-storage,hiro"
+#           resources:
+#             requests:
+#               memory: "64Mi"
+#               cpu: "250m"
+#             limits:
+#               memory: "128Mi"
+#               cpu: "500m"
+#           ports:
+#             - containerPort: 8443
+#           volumeMounts:
+#             - name: tls-certs
+#               mountPath: /etc/certs
+#               readOnly: true
+#       volumes:
+#         - name: tls-certs
+#           secret:
+#             secretName: validation-webhook-server-tls
+# ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: webhook-server
+  name: mutation-webhook-server
   namespace: hiro
   labels:
-    app: webhook-server
+    app: mutation-webhook-server
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: webhook-server
+      app: mutation-webhook-server
   template:
     metadata:
       labels:
-        app: webhook-server
+        app: mutation-webhook-server
     spec:
       serviceAccountName: pod-watcher-sa
       containers:
-        - name: webhook-server
+        - name: mutation-webhook-server
           image: workloadstealagent:alpha1
           imagePullPolicy: IfNotPresent
           env:
@@ -54,10 +103,10 @@ spec:
             value: "demo.nats.io:4222"  
           - name: NATS_SUBJECT
             value: "WorkStealingPod"
-          - name: WORK_LOAD_STEAL_LABLE
-            value: "WorkLoadSteal"
+          - name: NO_WORK_LOAD_STEAL_LABLE
+            value: "NoWorkLoadSteal"
           - name: IGNORE_NAMESPACES
-            value: "default,kube-system,hiro"
+            value: "default,kube-system,local-path-storage,hiro"
           resources:
             requests:
               memory: "64Mi"
@@ -74,4 +123,4 @@ spec:
       volumes:
         - name: tls-certs
           secret:
-            secretName: webhook-server-tls
+            secretName: mutation-webhook-server-tls

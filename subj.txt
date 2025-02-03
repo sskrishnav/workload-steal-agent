@@ -1,1 +1,1 @@
-subjectAltName=DNS:webhook-server.hiro.svc
+subjectAltName=DNS:mutation-webhook-server.hiro.svc
